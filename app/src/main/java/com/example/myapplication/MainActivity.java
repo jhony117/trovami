@@ -1,11 +1,14 @@
 package com.example.myapplication;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -13,6 +16,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -32,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private LocationCallback locationCallback;
+    private static final int ACCESS_FINE_LOCATION_REQUEST_CODE = 123;
 
 
     FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -55,9 +60,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
 
+        checkPermission();
+
         statusCheck();
         // Crear una instancia de FusedLocationProviderClient
-      //  FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        //  FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         // Crear una instancia de LocationRequest
         LocationRequest locationRequest = LocationRequest.create();
@@ -81,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         // Solicitar actualizaciones de ubicación
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -99,12 +106,12 @@ public class MainActivity extends AppCompatActivity {
                         if (location != null) {
                             // Usa la ubicación
                             String latitude = String.valueOf(location.getLatitude());
-                            String longitude =String.valueOf(location.getLongitude());
+                            String longitude = String.valueOf(location.getLongitude());
 
                             // Muestra la latitud y longitud
                             Log.i("Location", "Latitud: " + latitude + ", Longitud: " + longitude);
-                       TextView locationTextView = (TextView) findViewById(R.id.main_activity_location_textView);
-                       locationTextView.setText("Location" + "Latitud: " + latitude + ", Longitud: " + longitude);
+                            TextView locationTextView = (TextView) findViewById(R.id.main_activity_location_textView);
+                            locationTextView.setText("Location" + "Latitud: " + latitude + ", Longitud: " + longitude);
                         }
                     }
                 })
@@ -127,14 +134,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void checkPermission() {
+        if (checkSelfPermission(ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            // Si no se ha concedido el permiso, lo solicitamos
+            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, ACCESS_FINE_LOCATION_REQUEST_CODE);
+
+        }
+    }
 
 
 
+    //aun no se me ocurre como suar este metodo
+       //se ejecuta aumaticamente tnato si se acepto el permiso como si se denego
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
+        if (requestCode == ACCESS_FINE_LOCATION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // El permiso fue concedido, puedes continuar con la operación que requiere el permiso
+            } else {
+                if(shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Acceder a  la ubicacion del telefono");
+                    builder.setMessage("Debes aceptar este permiso para poder utiliar la app Trovami");
+                    builder.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
-
-
-
+                            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, ACCESS_FINE_LOCATION_REQUEST_CODE);
+                        }
+                    });
+                    builder.show();
+                }
+                // El permiso fue denegado. Debes manejar adecuadamente esta situación.
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
 
 
         public void statusCheck() {
